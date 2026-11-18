@@ -1,0 +1,31 @@
+name: render
+on:
+  workflow_dispatch:
+    inputs:
+      html:
+        required: true
+      tag:
+        required: true
+permissions:
+  contents: write
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm i puppeteer puppeteer-screen-recorder
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Render
+        env:
+          HTML: ${{ inputs.html }}
+        run: |
+          printf '%s' "$HTML" > reel.html
+          node render.js
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: gh release create "$TAG" reel.mp4 --title "$TAG" --notes "auto"
